@@ -1,0 +1,68 @@
+%%writefile omp_sieve.cpp
+
+#include <iostream>
+#include <cmath>
+#include <omp.h>
+
+using namespace std;
+
+/*
+* @input : integer n>1
+* @output : array of all prime numbers from 2 -> n
+* @desc : 
+*/
+
+void sieveAlg (int numberOfThreads, int n)
+{
+	bool *a = NULL;
+	a = (bool*) malloc(n * sizeof(bool));
+	
+	// Initialize boolean array from indices 2 -> n, all initially set to true
+	for (int i=2; i < n; ++i)
+	{
+		a[i] = true;
+	}
+
+	// Algorithm
+	int endPoint = sqrt(n) + 1;
+
+	double start = omp_get_wtime(); //start getting parallel section time
+
+	#pragma omp parallel for num_threads(numberOfThreads)
+	for (int i=2; i < endPoint; ++i)
+	{
+		if (a[i])
+		{
+			for (long j = i*j; j < n; j += i)
+			{
+				a[j] = false;
+			}
+		}
+	}
+	
+	double end = omp_get_wtime(); //stop timer for parallel section
+	double timeElapsed = end - start; // Find total time elapsed of parallel section
+
+	// Results
+	cout << "Parallel region done in " << timeElapsed << "seconds" << endl << "All primes less than " << n << ": ";
+	/*
+	for (int i = 2; i < n; ++i)
+	{
+		if (a[i])
+		{
+			cout << i << ", ";
+		}
+	}
+	*/
+
+	// Clean Up Memory
+	free (a); 
+}
+
+int main (int argc, char **argv)
+{
+	int thread_count = strtol(argv[1], NULL, 10); //get number of threads from command line
+	int n = stol (argv[2], NULL, 10);
+	
+	sieveAlg(thread_count, n);
+}
