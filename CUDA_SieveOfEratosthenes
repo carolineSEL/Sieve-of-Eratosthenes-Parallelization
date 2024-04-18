@@ -1,0 +1,90 @@
+!git config --global url."https://github.com/".insteadOf git://github.com/
+!pip install git+git://github.com/andreinechaev/nvcc4jupyter.git
+%load_ext nvcc_plugin
+
+%%cu
+#include <iostream>
+#include <cmath>
+
+//CUDA kernel to mark non-prime numbers
+_global_ void sieveKernel(bool* primes, int n) {
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	if (idx < n) {
+		if (idx < 2) {
+			primes[idx] = false;
+		else if (primes[idx] = false;
+			for (int i = idx * idx; i < n; i += idx) {
+				primes[i] = false;
+			}
+		}
+	}
+}
+
+void sieve Alg(int n) {
+
+// Allocate memory on the host
+bool* primes = new bool[n];
+for (int i = 0; i < n; i++) {
+	primes[i] = true;
+}
+
+// Allocate memory on the GPU
+bool* devPrimes;
+cudaMalloc((void**)&devPrimes, n * sizeof(bool));
+
+// Copy the prime flags from the host to the GPU
+cudaMemcpy(devPrimes, primes, n * sizeof(bool), cudaMemcpyHostToDevice);
+
+
+//Define the grid and block sizes
+int blockSize = 64;
+int gridSize = ((n + blockSize - 1) / blockSize);
+
+// Launch the CUDA kernel
+sieveKernel<<<gridSize, blockSize>>>(devPrimes, n);
+
+
+// Copy the prime flags from the GPU to the host
+cudaMempcpy(primes, devPrimes, n * sizeof(bool), cudaMemcpyDeviceToHost);
+
+// Print the prime numbers
+std::cout << "All primes less than " << n << ": ";
+for (int i = 2; i < n; ++i) {
+	if (primes[i])
+		std::cout << i << " ";
+}
+std::cout << std::endl;
+
+// Free the allocated memory
+cudaFree(devPrimes);
+delete[] primes;
+}
+
+int main() {
+
+	// Create CUDA events for measuring execution time
+	cudaEvent_t start, stop;
+	cudaEventCreate(&start);
+	cudaEventCreate(&stop);
+
+	// Record the start event
+	cudaEventRecord(start);
+
+	int n = 1000;
+	sieveAlg(n);
+
+	// Record the stop event
+	cudaEventRecord(stop);
+
+	// Synchronize to wait for the completion of the kernel
+	cudaDeviceSynchronize();
+
+	// Calculate the elapsed time
+	float milliseconds = 0;
+	cudaEventElapsedTime(&milliseconds, start, stop);
+
+	// Print the execution time
+	std::cout << "Execution time: " << milliseconds << " ms" << std::endl;
+
+	return 0;
+}
